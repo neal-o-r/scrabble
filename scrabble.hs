@@ -1,4 +1,4 @@
-import System.IO  
+import System.IO
 import Data.Char
 import Data.List
 import System.Random.Shuffle
@@ -9,16 +9,16 @@ import Text.Regex.Base
 import My_utils
 
 -- definitions
-board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################" 
+board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
 
 bag = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ__"
 alphabet = ['a'..'z']
 blank = '_'
 bingo = 50
 across = 1
-data Play = Play {start_sq :: Int, direction :: Char 
-                  , word:: String, rack :: String 
-                 } deriving (Show)
+data Play = Play {start_sq :: Int, direction :: Char
+      , word:: String, rack :: String
+     } deriving (Show)
 
 -- read dictionary
 get_words = do
@@ -26,26 +26,26 @@ get_words = do
 
 -- board
 get_board = do
-        readFile "board.txt"
+       readFile "board.txt"
 
 
 -- convert the internal ascii board to the prinable board
 -- an annoyingly large number of magic numbers in here
 board_convert board_ascii board_out =
-       let re = makeRegex "[a-z|A-Z]" :: Regex
-           letter_inds = regex_indices re (replace "#" "" board_ascii)
-           letts = filter isAlpha board_ascii
-           row_offset = 80
-           row_no = map (`quot` 15) letter_inds
-           col_no = map (`mod` 15) letter_inds
-           cols = add_num 6 (mul_num 5 col_no)
-           rows = (add_num (2*row_offset) (mul_num (2*row_offset+2) row_no))
-           true_inds = add_arr rows cols
-       in foldl (insertChar) board_out (zip true_inds letts) 
+        let re = makeRegex "[a-z|A-Z]" :: Regex
+            letter_inds = regex_indices re (replace "#" "" board_ascii)
+            letts = filter isAlpha board_ascii
+            row_offset = 80
+            row_no = map (`quot` 15) letter_inds
+            col_no = map (`mod` 15) letter_inds
+            cols = add_num 6 (mul_num 5 col_no)
+            rows = (add_num (2*row_offset) (mul_num (2*row_offset+2) row_no))
+            true_inds = add_arr rows cols
+        in foldl (insertChar) board_out (zip true_inds letts)
 
 
 print_board b =
-    let printer = color_print isAlphaNum White
+        let printer = color_print isAlphaNum White
          in sequence_ (map printer b)
 
 
@@ -59,19 +59,20 @@ letters rack =
                 else nub (map toUpper rack)
 
 -- take these tiles from rack
-remove tiles rack = 
+remove tiles rack =
         let replace_tiles = map (\c -> if (isLower c) then blank; else c)
-        in rack \\ (replace_tiles tiles)
+         in rack \\ (replace_tiles tiles)
 
-make_a_play board p = 
-    let st  = start_sq p
-        inc = if (direction p) == 'A' then 1 else 17 
-        end = st + (length (word p)) * inc
-        inds = range inc st end
-     in foldl (insertChar_in) board (zip inds (word p))
+make_a_play board p =
+        let st  = start_sq p
+            inc = if (direction p) == 'A' then 1 else 17
+            end = st + (length (word p)) * inc
+            inds = range inc st end
+        in foldl (insertChar_in) board (zip inds (word p))
 
 
 main = do
-        --dictionary <- get_words
-        board_out <- get_board
-        print_board (board_convert board board_out)
+        dictionary <- get_words
+--        board_out <- get_board
+--        putStr $ board_out
+
