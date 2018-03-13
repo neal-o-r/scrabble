@@ -6,11 +6,7 @@ import System.Console.ANSI
 import Data.List.Utils (replace)
 import Text.Regex
 import Text.Regex.Base
-
-add_arr a b = zipWith (+) a b 
-mul_arr a b = zipWith (*) a b 
-mul_num a b = map (* a) b
-add_num a b = map (+ a) b
+import My_utils
 
 -- definitions
 board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################" 
@@ -21,7 +17,7 @@ blank = '_'
 bingo = 50
 across = 1
 data Play = Play {start_sq :: Int, direction :: Char 
-                  , letter_state:: String, rack :: String 
+                  , word:: String, rack :: String 
                  } deriving (Show)
 
 -- read dictionary
@@ -32,19 +28,6 @@ get_words = do
 get_board = do
         readFile "board.txt"
 
-
-replaceAtIndex n item ls = a ++ (item:b) where (a, (_:b)) = splitAt n ls
-
--- put in a char at a place, and a blank space after
-insertChar :: String -> (Int, Char) -> String
-insertChar board state = 
-        let loc = fst state
-            c = snd state 
-         in replaceAtIndex (succ loc) ' ' (replaceAtIndex loc c board)
-
-
-regex_indices :: Regex -> String -> [Int]
-regex_indices reg str = [ i | (i,x) <- zip [0..] str, (matchTest reg [x])] 
 
 -- convert the internal ascii board to the prinable board
 -- an annoyingly large number of magic numbers in here
@@ -61,18 +44,8 @@ board_convert board_ascii board_out =
        in foldl (insertChar) board_out (zip true_inds letts) 
 
 
--- print something with color, 
--- give a predicate on which color changes
--- color to change to
-color_print predicate color char = do
-    if predicate char
-                then do setSGR [SetColor Foreground Vivid color] 
-                        putChar char
-                        setSGR [Reset]
-                else do putChar char
-
 print_board b =
-        let printer = color_print isAlphaNum White
+    let printer = color_print isAlphaNum White
          in sequence_ (map printer b)
 
 
@@ -90,6 +63,12 @@ remove tiles rack =
         let replace_tiles = map (\c -> if (isLower c) then blank; else c)
         in rack \\ (replace_tiles tiles)
 
+make_a_play board p = 
+    let st  = start_sq p
+        inc = if (direction p) == 'A' then 1 else 17 
+        end = st + (length (word p)) * inc
+        inds = range inc st end
+     in foldl (insertChar_in) board (zip inds (word p))
 
 
 main = do
