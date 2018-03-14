@@ -1,4 +1,4 @@
-module My_utils
+module Utils
 ( range
 , add_arr
 , mul_arr
@@ -10,12 +10,14 @@ module My_utils
 , regex_indices
 , color_print
 , up
-, low)
+, low
+, subanagrams)
 where
 
 import System.IO
 import Data.Char
 import Data.List
+import Data.Foldable
 import System.Random.Shuffle
 import System.Console.ANSI
 import Data.List.Utils (replace)
@@ -30,6 +32,20 @@ add_num a b = map (+ a) b
 
 up s = map toUpper s
 low s = map toLower s
+
+shuffle_pairs :: [t] -> [t] -> [[t]]
+shuffle_pairs xs [] = [xs]
+shuffle_pairs [] ys = [ys]
+shuffle_pairs (x:xs) (y:ys) =
+      map (x:) (shuffle_pairs xs (y:ys)) ++ map (y:) (shuffle_pairs (x:xs) ys)
+
+anagrams :: [Char] -> [[Char]]
+anagrams = foldrM shuffle_pairs "" . group . sort
+subanagrams :: [Char] -> [[Char]]
+subanagrams = foldrM f "" . map tails . group . sort where
+            f is j = is >>= flip shuffle_pairs j
+
+
 
 replaceAtIndex n item ls = a ++ (item:b) where (a, (_:b)) = splitAt n ls
 

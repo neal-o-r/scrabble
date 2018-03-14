@@ -6,24 +6,13 @@ import Data.Foldable
 --import System.Random.Shuffle
 import System.Console.ANSI
 import Data.List.Utils (replace)
-import Data.List.Extra (nubOrd)
 import Text.Regex
 import Text.Regex.Base
-import My_utils
+import Utils
+import Data.Set (Set)
+import qualified Data.Set as Set
 
-shuffle :: [t] -> [t] -> [[t]]
-shuffle xs [] = [xs]
-shuffle [] ys = [ys]
-shuffle (x:xs) (y:ys) =
-      map (x:) (shuffle xs (y:ys)) ++ map (y:) (shuffle (x:xs) ys)
-
-anagrams :: [Char] -> [[Char]]
-anagrams = foldrM shuffle "" . group . sort
-subanagrams :: [Char] -> [[Char]]
-subanagrams = foldrM f "" . map tails . group . sort where
-            f is j = is >>= flip shuffle j
-
--- definitions
+-- definitions and IO
 board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
 
 bag = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ__"
@@ -35,13 +24,14 @@ data Play = Play {start_sq :: Int, direction :: Char
       , word:: String, rack :: String
      } deriving (Show)
 
-dictionary = lines $ up . unsafePerformIO . readFile $ "enable1.txt"
-prefixes = lines $  up . unsafePerformIO . readFile $ "prefixes.txt"
+dictionary = Set.fromList (lines $ up . unsafePerformIO . readFile $ "enable1.txt")
+prefixes = Set.fromList (lines $  up . unsafePerformIO . readFile $ "prefixes.txt")
 -- board
 get_board = do
        readFile "board.txt"
+-------------------------
 
-
+-- Board stuff
 -- convert the internal ascii board to the prinable board
 -- an annoyingly large number of magic numbers in here
 board_convert board_ascii board_out =
@@ -61,20 +51,45 @@ print_board b =
         let printer = color_print isAlphaNum White
          in sequence_ (map printer b)
 
-is_word word = (up word) `elem` dictionary
+is_anchor :: [Char] -> Int -> Bool
+is_anchor board s = 
+        let inds = (filter (\x -> x > 0 && x < (length board) - 1) [(s + i) | i <- [1, -1, 17, -17]])
+         in (board !! s) == '*' || True `elem` [isAlpha (board !! i) | i <- inds]
+
+all_anchors :: [Char] -> [Int]
+all_anchors board =
+        [i | i <- [0..(length board)-1], (is_anchor board i)]
+
+------
+
+
+-- Word and rack
+is_word word = Set.member (up word) dictionary
+
+rack_prefixes rack =
+        let expanded_rack = concat (map (subanagrams . up) (blank_expand rack blank))
+         in Set.intersection (Set.fromList $ expanded_rack) prefixes
+
+blank_expand :: [Char] -> Char -> [[Char]]
+blank_expand w b
+        | b `elem` w = [replace [b] [a] w | a <- alphabet]
+        | otherwise = [w]
 
 -- get letters in rack
 letters :: String -> String
 letters rack =
         if blank `elem` rack
                 then (letters $ filter (not . (== blank)) rack) ++ alphabet
-                else nub (map toUpper rack)
+                else up rack
 
 -- take these tiles from rack
 remove tiles rack =
         let replace_tiles = map (\c -> if (isLower c) then blank; else c)
          in rack \\ (replace_tiles tiles)
+----
 
+
+-- Play
 make_a_play board p =
         let st  = start_sq p
             inc = if (direction p) == 'A' then 1 else 17
@@ -82,9 +97,12 @@ make_a_play board p =
             inds = range inc st end
         in foldl (insertChar_in) board (zip inds (word p))
 
+--all_plays board rack =
+--        let null_play = [(Play 0 'A' "" "")]
 
---main = do
 
+main = do
+        print $ rack_prefixes "LETTER_"
         --board_out <- get_board
 --        putStr $ board_out
 
