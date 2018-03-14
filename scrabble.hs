@@ -25,7 +25,6 @@ data Play = Play {start_sq :: Int, direction :: Char
      } deriving (Show)
 
 dictionary = Set.fromList (lines $ up . unsafePerformIO . readFile $ "enable1.txt")
-prefixes = Set.fromList (lines $  up . unsafePerformIO . readFile $ "prefixes.txt")
 -- board
 get_board = do
        readFile "board.txt"
@@ -67,8 +66,9 @@ all_anchors board =
 is_word word = Set.member (up word) dictionary
 
 rack_prefixes rack =
-        let expanded_rack = concat (map (subanagrams . up) (blank_expand rack blank))
-         in Set.intersection (Set.fromList $ expanded_rack) prefixes
+        let expanded_rack = concatMap (subanagrams . up) (blank_expand rack blank)
+            s = Set.toList $ Set.intersection (Set.fromList $ expanded_rack) dictionary
+         in nub $ concatMap inits s
 
 blank_expand :: [Char] -> Char -> [[Char]]
 blank_expand w b
@@ -97,12 +97,17 @@ make_a_play board p =
             inds = range inc st end
         in foldl (insertChar_in) board (zip inds (word p))
 
---all_plays board rack =
---        let null_play = [(Play 0 'A' "" "")]
+scan_to_anchor board s dir_inc =
+        let c = \x -> (board !! x) /= '#' && not (is_anchor board x)
+            i = takeWhile (c) [s + i*dir_inc | i <- [1..]]
+         in last $ (s:i)
 
-
-main = do
-        print $ rack_prefixes "LETTER_"
+scan_to_letter board s dir_inc =
+        let c = \x -> isAlpha (board !! x)
+            i = takeWhile (c) [s + i*dir_inc | i <- [1..]]
+         in last $ (s:i)
+--main = do
+--        print $ rack_prefixes "LETTER_"
         --board_out <- get_board
 --        putStr $ board_out
 
