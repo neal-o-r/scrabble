@@ -8,7 +8,9 @@ module My_utils
 , insertChar_in
 , insertChar
 , regex_indices
-, color_print)
+, color_print
+, up
+, low)
 where
 
 import System.IO
@@ -25,6 +27,9 @@ add_arr a b = zipWith (+) a b
 mul_arr a b = zipWith (*) a b
 mul_num a b = map (* a) b
 add_num a b = map (+ a) b
+
+up s = map toUpper s
+low s = map toLower s
 
 replaceAtIndex n item ls = a ++ (item:b) where (a, (_:b)) = splitAt n ls
 
@@ -54,4 +59,4 @@ color_print predicate color char = do
                         putChar char
                         setSGR [Reset]
                 else do putChar char
-
+                    

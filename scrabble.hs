@@ -1,12 +1,27 @@
 import System.IO
+import System.IO.Unsafe
 import Data.Char
 import Data.List
-import System.Random.Shuffle
+import Data.Foldable
+--import System.Random.Shuffle
 import System.Console.ANSI
 import Data.List.Utils (replace)
+import Data.List.Extra (nubOrd)
 import Text.Regex
 import Text.Regex.Base
 import My_utils
+
+shuffle :: [t] -> [t] -> [[t]]
+shuffle xs [] = [xs]
+shuffle [] ys = [ys]
+shuffle (x:xs) (y:ys) =
+      map (x:) (shuffle xs (y:ys)) ++ map (y:) (shuffle (x:xs) ys)
+
+anagrams :: [Char] -> [[Char]]
+anagrams = foldrM shuffle "" . group . sort
+subanagrams :: [Char] -> [[Char]]
+subanagrams = foldrM f "" . map tails . group . sort where
+            f is j = is >>= flip shuffle j
 
 -- definitions
 board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
@@ -20,10 +35,8 @@ data Play = Play {start_sq :: Int, direction :: Char
       , word:: String, rack :: String
      } deriving (Show)
 
--- read dictionary
-get_words = do
-        readFile "enable1.txt"
-
+dictionary = lines $ up . unsafePerformIO . readFile $ "enable1.txt"
+prefixes = lines $  up . unsafePerformIO . readFile $ "prefixes.txt"
 -- board
 get_board = do
        readFile "board.txt"
@@ -48,8 +61,7 @@ print_board b =
         let printer = color_print isAlphaNum White
          in sequence_ (map printer b)
 
-
-is_word word dictionary = word `elem` dictionary
+is_word word = (up word) `elem` dictionary
 
 -- get letters in rack
 letters :: String -> String
@@ -71,8 +83,8 @@ make_a_play board p =
         in foldl (insertChar_in) board (zip inds (word p))
 
 
-main = do
-        dictionary <- get_words
---        board_out <- get_board
+--main = do
+
+        --board_out <- get_board
 --        putStr $ board_out
 
