@@ -25,6 +25,7 @@ data Play = Play {start_sq :: Int, direction :: Char
      } deriving (Show)
 
 dictionary = Set.fromList (lines $ up . unsafePerformIO . readFile $ "enable1.txt")
+prefixes = Set.fromList (lines $ up . unsafePerformIO . readFile $ "prefixes.txt")
 -- board
 get_board = do
        readFile "board.txt"
@@ -67,8 +68,10 @@ is_word word = Set.member (up word) dictionary
 
 rack_prefixes rack =
         let expanded_rack = concatMap (subanagrams . up) (blank_expand rack blank)
-            s = Set.toList $ Set.intersection (Set.fromList $ expanded_rack) dictionary
-         in nub $ concatMap inits s
+         in Set.intersection (Set.fromList $ expanded_rack) prefixes
+
+--            s = Set.toList $ Set.intersection (Set.fromList $ expanded_rack) dictionary
+--         in nub $ concatMap inits s
 
 blank_expand :: [Char] -> Char -> [[Char]]
 blank_expand w b
