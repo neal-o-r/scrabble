@@ -69,8 +69,8 @@ all_anchors board =
 is_word word = Set.member (up word) dictionary
 is_pref word = Set.member (up word) prefixes
 
-rack_prefixes rack =
-        let expanded_rack = concatMap (subanagrams . up) (blank_expand rack blank)
+rack_prefixes pre rack =
+        let expanded_rack = map (pre++) $ concatMap (subanagrams . up) (blank_expand rack blank)
          in Set.intersection (Set.fromList $ expanded_rack) prefixes
 
 blank_expand :: [Char] -> Char -> [[Char]]
@@ -110,8 +110,18 @@ scan_to_letter board s dir_inc =
             i = takeWhile (c) [s + i*dir_inc | i <- [1..]]
          in last $ (s:i)
 
+sq_plays board rack pre s = 
+        let sq = fst s
+            d  = dir $ snd s
+            max_pre = abs (sq - (scan_to_anchor board sq -d)) `quot` d
+            pres = Set.filter (\x -> length x <= max_pre) $ rack_prefixes pre rack
+        
 
-all_moves board =
+all_plays board rack = 
+        let sqs = all_sqs board
+         in [sq_plays board rack sq | sq <- sqs]
+
+all_sqs board =
     let anc = all_anchors board
         rep = replicate (length anc)
      in zip (concat $ replicate 2 anc) (rep "A" ++ rep "D")  
@@ -122,8 +132,8 @@ other_dir dir_inc = if dir_inc == 1 then 17 else 1
 dir d = if d == "D" then 17 else 1 
 
 
-main = do
-        print $ rack_prefixes "AETTER_"
+--main = do
+--        print $ rack_prefixes "AETTER" "B"
         --board_out <- get_board
 --        putStr $ board_out
 
