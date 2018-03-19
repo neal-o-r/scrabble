@@ -13,12 +13,14 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 
 -- definitions and IO
-board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
+--board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
 
+board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...the.:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
 bag = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ__"
 alphabet = ['a'..'z']
 blank = '_'
 bingo = 50
+off = '#'
 across = 1
 data Play = Play {start_sq :: Int, direction :: Char
       , word:: String, rack :: String
@@ -65,13 +67,11 @@ all_anchors board =
 
 -- Word and rack
 is_word word = Set.member (up word) dictionary
+is_pref word = Set.member (up word) prefixes
 
 rack_prefixes rack =
         let expanded_rack = concatMap (subanagrams . up) (blank_expand rack blank)
          in Set.intersection (Set.fromList $ expanded_rack) prefixes
-
---            s = Set.toList $ Set.intersection (Set.fromList $ expanded_rack) dictionary
---         in nub $ concatMap inits s
 
 blank_expand :: [Char] -> Char -> [[Char]]
 blank_expand w b
@@ -101,7 +101,7 @@ make_a_play board p =
         in foldl (insertChar_in) board (zip inds (word p))
 
 scan_to_anchor board s dir_inc =
-        let c = \x -> (board !! x) /= '#' && not (is_anchor board x)
+        let c = \x -> (board !! x) /= off && not (is_anchor board x)
             i = takeWhile (c) [s + i*dir_inc | i <- [1..]]
          in last $ (s:i)
 
@@ -109,8 +109,21 @@ scan_to_letter board s dir_inc =
         let c = \x -> isAlpha (board !! x)
             i = takeWhile (c) [s + i*dir_inc | i <- [1..]]
          in last $ (s:i)
---main = do
---        print $ rack_prefixes "LETTER_"
+
+
+all_moves board =
+    let anc = all_anchors board
+        rep = replicate (length anc)
+     in zip (concat $ replicate 2 anc) (rep "A" ++ rep "D")  
+
+
+valid_crossword cword l = (length cword) == 1 || is_word (replace "." l cword)
+other_dir dir_inc = if dir_inc == 1 then 17 else 1 
+dir d = if d == "D" then 17 else 1 
+
+
+main = do
+        print $ rack_prefixes "AETTER_"
         --board_out <- get_board
 --        putStr $ board_out
 
