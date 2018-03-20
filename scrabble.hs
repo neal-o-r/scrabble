@@ -15,16 +15,19 @@ import qualified Data.Set as Set
 -- definitions and IO
 --board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...*...:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
 
-board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:...the.:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
+board = "##################=..:...=...:..=##.-...;...;...-.##..-...:.:...-..##:..-...:...-..:##....-.....-....##.;...;...;...;.##..:...:.:...:..##=..:at.the.:..=##..:...:.:...:..##.;...;...;...;.##....-.....-....##:..-...:...-..:##..-...:.:...-..##.-...;...;...-.##=..:...=...:..=##################"
 bag = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ__"
 alphabet = ['a'..'z']
 blank = '_'
 bingo = 50
 off = '#'
 across = 1
+dirs = [1, -1, 17, -17]
 data Play = Play {start_sq :: Int, direction :: Char
       , word:: String, rack :: String
      } deriving (Show)
+other_dir dir_inc = if dir_inc == 1 then 17 else 1 
+dir d = if d == 'D' then 17 else 1 
 
 dictionary = Set.fromList (lines $ up . unsafePerformIO . readFile $ "enable1.txt")
 prefixes = Set.fromList (lines $ up . unsafePerformIO . readFile $ "prefixes.txt")
@@ -55,7 +58,7 @@ print_board b =
 
 is_anchor :: [Char] -> Int -> Bool
 is_anchor board s = 
-        let inds = (filter (\x -> x > 0 && x < (length board) - 1) [(s + i) | i <- [1, -1, 17, -17]])
+        let inds = (filter (\x -> x > 0 && x < (length board) - 1) [(s + i) | i <- dirs])
          in (board !! s) == '*' || True `elem` [isAlpha (board !! i) | i <- inds]
 
 all_anchors :: [Char] -> [Int]
@@ -73,9 +76,8 @@ rack_prefixes rack =
         let expanded_rack = concatMap (subanagrams . up) (blank_expand rack blank)
          in Set.intersection (Set.fromList $ expanded_rack) prefixes
 
-post_prefixes post prefs =
-        Set.intersection (Set.map (++post) prefs) prefixes
-
+post_prefixes prefs post =
+    Set.toList $ Set.intersection (Set.map (++[post]) (Set.fromList prefs)) prefixes
 
 blank_expand :: [Char] -> Char -> [[Char]]
 blank_expand w b
@@ -87,7 +89,7 @@ letters :: String -> String
 letters rack =
         if blank `elem` rack
                 then (letters $ filter (not . (== blank)) rack) ++ alphabet
-                else up rack
+                else nub $ up rack
 
 -- take these tiles from rack
 remove tiles rack =
@@ -99,7 +101,7 @@ remove tiles rack =
 -- Play
 make_a_play board p =
         let st  = start_sq p
-            inc = if (direction p) == 'A' then 1 else 17
+            inc = dir (direction p)
             end = st + (length (word p)) * inc
             inds = range inc st end
         in foldl (insertChar_in) board (zip inds (word p))
@@ -114,13 +116,29 @@ scan_to_letter board s dir_inc =
             i = takeWhile (c) [s + i*dir_inc | i <- [1..]]
          in last $ (s:i)
 
+rev_dir s i
+    | i > 0 = s
+    | otherwise = reverse s
+
+collect_words_around board s =
+    let s_a = zip (map (s+) dirs) dirs
+        clb = collect_letters board
+     in filter (/= "") $ map (\ x -> rev_dir (clb (fst x) (snd x)) (snd x)) s_a   
+
+collect_letters board s dir_inc =
+    let w = [board !! i | i <- (range dir_inc s (scan_to_letter board s dir_inc))]
+     in if not (isAlpha $ w !! 0) then "" else w
+
+poss_letters board s rack =
+    let ws = map up (collect_words_around board s)
+     in map tail $ concatMap (post_prefixes ws) $ letters rack
+
 {-
 sq_plays board rack pre s = 
         let sq = fst s
             d  = dir $ snd s
             max_pre = abs (sq - (scan_to_anchor board sq -d)) `quot` d
             pres = Set.filter (\x -> length x <= max_pre) $ rack_prefixes pre rack
-        
 
 all_plays board rack = 
         let sqs = all_sqs board
@@ -131,12 +149,6 @@ all_sqs board =
     let anc = all_anchors board
         rep = replicate (length anc)
      in zip (concat $ replicate 2 anc) (rep "A" ++ rep "D")  
-
-
-valid_crossword cword l = (length cword) == 1 || is_word (replace "." l cword)
-other_dir dir_inc = if dir_inc == 1 then 17 else 1 
-dir d = if d == "D" then 17 else 1 
-
 
 --main = do
 --        print $ rack_prefixes "AETTER" "B"

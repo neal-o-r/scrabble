@@ -24,7 +24,9 @@ import Data.List.Utils (replace)
 import Text.Regex
 import Text.Regex.Base
 
-range step start end = takeWhile (<=end) $ iterate (+step) start
+range step start end 
+    | step > 0 = takeWhile (<=end) $ iterate (+step) start
+    | otherwise = takeWhile (>=end) $ iterate (+step) start
 add_arr a b = zipWith (+) a b
 mul_arr a b = zipWith (*) a b
 mul_num a b = map (* a) b
