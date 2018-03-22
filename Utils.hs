@@ -11,6 +11,7 @@ module Utils
 , color_print
 , up
 , low
+, slice
 , subanagrams)
 where
 
@@ -18,19 +19,21 @@ import System.IO
 import Data.Char
 import Data.List
 import Data.Foldable
-import System.Random.Shuffle
 import System.Console.ANSI
 import Data.List.Utils (replace)
 import Text.Regex
 import Text.Regex.Base
 
+ 
 range step start end 
     | step > 0 = takeWhile (<=end) $ iterate (+step) start
     | otherwise = takeWhile (>=end) $ iterate (+step) start
+
 add_arr a b = zipWith (+) a b
 mul_arr a b = zipWith (*) a b
 mul_num a b = map (* a) b
 add_num a b = map (+ a) b
+slice from to xs = take (to - from) (drop from xs)
 
 up s = map toUpper s
 low s = map toLower s
@@ -68,13 +71,16 @@ insertChar board state =
 regex_indices :: Regex -> String -> [Int]
 regex_indices reg str = [ i | (i,x) <- zip [0..] str, (matchTest reg [x])]
 
--- print something with color,
--- give a predicate on which color changes
--- color to change to
-color_print predicate color char = do
-    if predicate char
-                then do setSGR [SetColor Foreground Vivid color]
+color_print char = do
+    if isAlphaNum char
+       then do 
+          if isUpper char || isNumber char 
+                then do setSGR [SetColor Foreground Vivid White]
                         putChar char
                         setSGR [Reset]
-                else do putChar char
+                else do setSGR [SetColor Foreground Vivid Red]
+                        putChar char
+                        setSGR [Reset]
+
+       else do putChar char
                     
