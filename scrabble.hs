@@ -66,7 +66,7 @@ check_move board sq d w =
             board_inds = [(sq + dir_inc * i) | (c, i) <- zip (w) [0..]]
             board_slice = [[board !! i] | i <- board_inds]
             has_anc = any (==True) $ (map (`elem` (all_anchors board)) board_inds)
-            matches_letts = all (==True) [check_chars b c | (b, c) <- zip board_slice w] 
+            matches_letts = all (==True) [check_chars b c | (b, c) <- zip board_slice (low w)] 
          in has_anc && matches_letts
 
 take_letters state word =
