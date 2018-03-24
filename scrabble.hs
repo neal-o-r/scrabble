@@ -54,12 +54,21 @@ get_move state = do
                 get_move state
         else pure (Play ind (head d) w rack)
 
+check_chars b c =
+    if length b == 1
+        then if head $ map isAlpha b
+              then [c] == b
+              else True
+        else True
 
 check_move board sq d w = 
         let dir_inc = dir (head d)
-            board_slice = [(sq + dir_inc * i) | (c, i) <- zip (w) [0..]]
-         in any (==True) $ (map (`elem` (all_anchors board)) board_slice)
-        
+            board_inds = [(sq + dir_inc * i) | (c, i) <- zip (w) [0..]]
+            board_slice = [[board !! i] | i <- board_inds]
+            has_anc = any (==True) $ (map (`elem` (all_anchors board)) board_inds)
+            matches_letts = all (==True) [check_chars b c | (b, c) <- zip board_slice w] 
+         in has_anc && matches_letts
+
 take_letters state word =
     if even (turn state)
        then state {rack1 = remove word (rack1 state)}
