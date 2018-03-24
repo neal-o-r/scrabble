@@ -43,7 +43,7 @@ across = 1
 other_dir dir_inc = if dir_inc == 1 then 17 else 1
 dir d = if d == 'D' then 17 else 1
 
-dictionary = Set.filter (\x -> length x < 10) $ Set.fromList (lines $ up . unsafePerformIO . readFile $ "enable1.txt")
+dictionary = Set.fromList (lines $ up . unsafePerformIO . readFile $ "enable1.txt")
 board_out = unsafePerformIO . readFile $ "board.txt"
 score_letter = score . toLower
  where

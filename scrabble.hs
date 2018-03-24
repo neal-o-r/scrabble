@@ -45,10 +45,21 @@ get_move state = do
               (\ x -> not $ (head $ up x) `elem` ['A', 'D']))
     w <- (get_move_from_user board rack 
             "What word would you like to play (use upper case, lower to play blank)?" "That's not in your rack"
-              (\ x -> not $ is_in_rack x))
+              (\ x -> False))
     let ind = square_convert sq_in
-    pure (Play ind (head d) w rack)
+    let b = check_move (board_state state) ind d w
+    if not b 
+         then do
+                putStrLn "Hmmm, I think you made a mistake there, try again"
+                get_move state
+        else pure (Play ind (head d) w rack)
 
+
+check_move board sq d w = 
+        let dir_inc = dir (head d)
+            board_slice = [(sq + dir_inc * i) | (c, i) <- zip (w) [0..]]
+         in any (==True) $ (map (`elem` (all_anchors board)) board_slice)
+        
 take_letters state word =
     if even (turn state)
        then state {rack1 = remove word (rack1 state)}
@@ -106,13 +117,14 @@ score_play state play =
 update_state state play =
     let play_v = check_play state play
         new_board = make_a_play state play_v
-        s = score_play state play
-        g_up = replenish_racks (take_letters state (tiles_used state play))
+        s = score_play state play_v
+        g_up = replenish_racks (take_letters state (tiles_used state play_v))
      in if even (turn state) 
             then g_up {score1 = (score1 g_up) + s, board_state = new_board, turn=(succ (turn g_up))}
             else g_up {score2 = (score2 g_up) + s, board_state = new_board, turn=(succ (turn g_up))}
 
 run_game state pass = do
+    clearScreen
     print_board state
     p <- get_move state
     let new_state = update_state state p
