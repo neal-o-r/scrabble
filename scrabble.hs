@@ -47,7 +47,7 @@ get_move state = do
             "What word would you like to play (use upper case, lower to play blank)?" "That's not in your rack"
               (\ x -> False))
     let ind = square_convert sq_in
-    let b = check_move (board_state state) ind d w
+    let b = check_move (board_state state) ind d w rack
     if not b 
          then do
                 putStrLn "Hmmm, I think you made a mistake there, try again"
@@ -61,13 +61,14 @@ check_chars b c =
               else True
         else True
 
-check_move board sq d w = 
+check_move board sq d w r = 
         let dir_inc = dir (head d)
             board_inds = [(sq + dir_inc * i) | (c, i) <- zip (w) [0..]]
             board_slice = [[board !! i] | i <- board_inds]
             has_anc = any (==True) $ (map (`elem` (all_anchors board)) board_inds)
-            matches_letts = all (==True) [check_chars b c | (b, c) <- zip board_slice (low w)] 
-         in has_anc && matches_letts
+            matches_letts = all (==True) [check_chars b c | (b, c) <- zip board_slice (low w)]
+            ls = is_in_rack (w \\ (up (filter isLower $ concat board_slice))) r
+         in has_anc && matches_letts && ls
 
 take_letters state word =
     if even (turn state)
