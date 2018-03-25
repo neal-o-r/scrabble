@@ -77,7 +77,7 @@ take_letters state word =
 
 validate_sq board s c =
     let words = collect_words_around board s
-        pair = [words!!0 ++ c ++ words!!2, words!!1 ++ c ++ words!!3]
+        pair = [words!!1 ++ c ++ words!!0, words!!3 ++ c ++ words!!2]
         cond = \x -> is_word x || (length x) == 1
      in all (==True) (map cond pair)   
 
@@ -93,7 +93,8 @@ check_play state play =
     let board = (board_state state)
         sq = (start_sq play)
         dir_inc = dir (direction play)
-        valids = [validate_sq board (sq + dir_inc*i) [c] | (c, i) <- zip (word play) [0..]]
+        test_board = make_a_play state play
+        valids = [validate_sq test_board (sq + dir_inc*i) [c] | (c, i) <- zip (word play) [0..]]
      in if (all (==True) valids) && contains_achors state play
            then play
            else play {word = ""}
